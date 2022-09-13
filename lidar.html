@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">        
+        <link rel="stylesheet" href="css/easy-button.css">
+        <link rel="stylesheet" href="css/filter.css">
+        <link rel="stylesheet" href="css/nouislider.min.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 95%;
+            padding: 0;
+            margin: 0;
+        }
+        #bobandeau {
+            width: 100%;
+            height: 75px;           
+            background-color: rgb(94, 143, 189);
+        }
+        #accueil {
+            color: #FFFFFF;
+            font-size: 20px;
+            font-weight: bold;
+            position: absolute;
+            left: 100px;Top: 20px;
+            font-family: Georgia, "Times New Roman", Times, serif;}
+        
+        </style>    
+        <title></title>
+
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.wms.js"></script>
+        <script src="js/leaflet-tilelayer-wmts.js"></script>
+        <script src="js/L.Control.Appearance.js"></script>
+        <script src="js/easy-button.js"></script>
+        <script src="js/tailDT.js"></script>
+        <script src="js/nouislider.min.js"></script>
+        <script src="js/wNumb.js"></script>        
+         
+    </head>
+    <body>
+        <div id="bobandeau">            
+        <div id="accueil">Le littoral de Moëlan sur mer</div>        
+        </div></br>
+        <div id="map">
+        </div>
+        <script>
+            var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+                fillOpacity: 1
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:18, minZoom:15
+        }).fitBounds([[47.767372903169544,-3.693756088590098],[47.79881553716952,-3.6342138760428924]]);
+        
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 50, location: 'smart'}});
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+
+
+        map.createPane('pane_OrthophotographieduFinistre2018_1');
+        map.getPane('pane_OrthophotographieduFinistre2018_1').style.zIndex = 400;
+        var layer_OrthophotographieduFinistre2018_1 = L.WMS.layer("https://geobretagne.fr/geoserver/photo/wms", "ortho-29-2018", {
+            pane: 'pane_OrthophotographieduFinistre2018_1',
+            format: 'image/png',            
+            uppercase: true,
+            transparent: true,
+            continuousWorld : true,
+            tiled: true,
+            info_format: 'text/html',
+            opacity: 1,
+            identify: false,
+            attribution: '',
+        });
+        /*map.addLayer(layer_OrthophotographieduFinistre2018_1); */
+        
+        map.createPane('pane_Lidar');
+        map.getPane('pane_Lidar').style.zIndex = 401;
+        var layer_Lidar = L.tileLayer('Tiles/{z}/{x}/{y}.jpg', {
+            pane: 'pane_Lidar',          
+            minZoom: 14,
+            maxZoom: 18,
+            tms: false,
+            opacity: 0.6,
+            attribution: ''
+        });
+        map.addLayer(layer_Lidar);
+
+      
+        setBounds();
+        L.ImageOverlay.include({
+            getBounds: function () {
+                return this._bounds;
+            }
+        });
+
+
+        var baseLayers = {};
+        var uneditableOverlays = {};
+        var overlays = {'Littoral 3D SHOM': layer_Lidar,"Vue aérienne GéoBretagne": layer_OrthophotographieduFinistre2018_1} ;
+
+        var appearanceControl = L.control.appearance(baseLayers, uneditableOverlays, overlays, {collapsed:false,label:'<b><u> &nbspLittoral de Moëlan sur mer</b></u>&nbsp ', radioCheckbox: true,layerName:true,opacity:true,remove:false,color:false,removeIcon:"./css/images/cancel.png"});
+	      appearanceControl.addTo(map);
+       
+ 
+               
+               
+        var infoPopup = L.popup({closeButton:true,'minWidth':'400'})           
+            .setContent('<b>Vue aérienne 2018 :</b> <a href="https://geobretagne.fr/">© GéoBretagne</a><br /><b>Littoral 3D SHOM:</b> <a href="https://diffusion.shom.fr/pro/amenagement/altimetrie-littorale/litto3dr-finistere-2014.html/">© SHOM Litto3D® - Finistère 2014</a><br /><br />');
+                  
+        var buttons = [ 
+      
+        L.easyButton({
+            id: 'button_centre',  
+            position: 'topleft', 
+            type: 'replace',   
+            leafletClasses: true,     
+            states:[{                 
+                stateName: 'centre',
+                onClick: function(button, map){
+                map.setView([47.7790, -3.6636], 15);
+            },
+            title: 'centre la carte',
+            icon: 'fa-arrows-alt'
+            }]
+        }),
+
+         L.easyButton({
+            id: 'id-for-the-button',  
+            position: 'topleft',      
+            type: 'replace',         
+            leafletClasses: true,     
+            states:[{              
+                stateName: 'info',
+                onClick: function(button, map){
+                infoPopup.setLatLng(map.getCenter()).openOn(map);
+            },
+            title: 'informations',
+            icon: 'fa-info'
+            }]
+        })
+    ];
+        
+        L.easyBar(buttons).addTo(map);
+
+        var scale = L.control.scale({imperial:false}); // Creating scale control
+         scale.addTo(map); // Adding scale control to the map
+
+        </script>
+  
+   
+    </body>
+</html>
